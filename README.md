@@ -1,237 +1,870 @@
-# KUBESTREAM
+
+# KubeStream
+
 ### Intelligent Scalable Web Infrastructure for Real-Time Video & Interactive Events
 
-[![Architecture](https://img.shields.io/badge/Architecture-WebRTC%20%2F%20SFU%20%2F%20CDN%20Cascade-06b6d4.svg)](#system-architecture)
-[![ML Engine](https://img.shields.io/badge/ML%20Engine-Random%20Forest%20%2B%20Saabas%20XAI-818cf8.svg)](#machine-learning--explainable-ai)
-[![FinOps](https://img.shields.io/badge/FinOps-Dynamic%20Unit%20Economics-10b981.svg)](#finops--unit-economics)
-[![Simulation](https://img.shields.io/badge/Simulation-Discrete%20Timestep%20Digital%20Twin-f59e0b.svg)](#simulation-engine)
+<p align="center">
+  <img src="https://img.shields.io/badge/Architecture-WebRTC%20%2F%20SFU%20%2F%20CDN-06b6d4?style=for-the-badge" />
+  <img src="https://img.shields.io/badge/ML-Random%20Forest%20%2B%20XAI-818cf8?style=for-the-badge" />
+  <img src="https://img.shields.io/badge/FinOps-Dynamic%20Cost%20Optimization-10b981?style=for-the-badge" />
+  <img src="https://img.shields.io/badge/Simulation-Digital%20Twin-f59e0b?style=for-the-badge" />
+</p>
+
+KubeStream is an intelligent infrastructure simulation and orchestration platform designed to model how large-scale real-time video conferencing and interactive event systems provision, route, and optimize cloud resources under changing workloads.
+
+Rather than functioning as another video conferencing application, KubeStream focuses on the infrastructure operating underneath such platforms: media distribution, architectural switching, regional routing, predictive scaling, Quality of Experience (QoE), explainable machine learning, and cloud cost optimization.
+
+The platform combines a browser-based WebRTC workload with a discrete-timestep infrastructure digital twin, allowing users to experiment with infrastructure decisions through an interactive dashboard.
 
 ---
 
-## 1. Executive Summary & Project Identity
+## Table of Contents
 
-**KubeStream** is not a video conferencing client or Zoom clone. It is a cloud infrastructure orchestration platform and digital twin control plane designed to simulate, optimize, and explain how large-scale real-time video conferencing and interactive event platforms dynamically provision, route, and scale cloud resources under changing workloads, network degradation, and regional outages.
-
-The video conferencing interface exists to supply the real-world workload being simulated. The core product is the intelligent control plane operating underneath it.
+- [1. Project Overview](#1-project-overview)
+- [2. Problem Statement](#2-problem-statement)
+- [3. Key Features and Contributions](#3-key-features-and-contributions)
+- [4. System Architecture](#4-system-architecture)
+- [5. Architectural Modes](#5-architectural-modes)
+- [6. Mathematical Models](#6-mathematical-models)
+- [7. Machine Learning and Explainable AI](#7-machine-learning-and-explainable-ai)
+- [8. FinOps and Cost Optimization](#8-finops-and-cost-optimization)
+- [9. Technology Stack](#9-technology-stack)
+- [10. AWS Production Architecture Mapping](#10-aws-production-architecture-mapping)
+- [11. Simulation Boundaries](#11-simulation-boundaries)
+- [12. Installation and Setup](#12-installation-and-setup)
+- [13. Running the Application](#13-running-the-application)
+- [14. Automated Live Demonstration](#14-automated-live-demonstration)
+- [15. Project Structure](#15-project-structure)
+- [16. Limitations and Future Scope](#16-limitations-and-future-scope)
+- [17. Contributors](#17-contributors)
 
 ---
 
-## 2. Core Problem & Motivation
+## 1. Project Overview
+
+Real-time video infrastructure behaves differently from conventional web applications.
+
+A traditional web service can often scale using request rates and CPU utilization. Video conferencing platforms must additionally account for:
+
+- Number of active publishers and viewers.
+- WebRTC media distribution overhead.
+- Network latency, jitter, and packet loss.
+- Regional infrastructure capacity.
+- Video quality and bitrate adaptation.
+- Signalling and interactive event traffic.
+- Infrastructure cost and resource utilization.
+
+KubeStream models these interacting factors through an intelligent control plane.
+
+The platform evaluates workload and network conditions to determine:
+
+1. Which media distribution architecture should be used.
+2. How many infrastructure workers are required.
+3. Which regional edge location is most suitable.
+4. Whether network conditions require video quality adaptation.
+5. How infrastructure decisions affect QoE and operating costs.
+
+The result is an interactive digital twin demonstrating how scalable real-time video infrastructure could respond to changing operating conditions.
+
+## 2. Problem Statement
 
 ### The Elastic Real-Time Video Infrastructure Dilemma
-Conventional cloud applications scale via stateless HTTP request metrics. Real-time video conferencing, however, presents unique engineering hurdles:
-1. **At Low Traffic:** Statically provisioned SFU (Selective Forwarding Unit) instances remain underutilized, GPU transcoding instances idle, databases run near-zero transactions, and keeping resources warm burns capital.
-2. **At Extreme Traffic:** Signalling servers bottleneck, WebRTC media fan-out explodes quadratically ($O(N^2)$ in mesh, $O(N \times P)$ in SFU), network egress bandwidth saturates 10 Gbps NICs, database connection pools exhaust from interactive poll storms, and naive scale-to-zero autoscaling introduces catastrophic cold-start latency (30–60s container pull stalls).
-3. **The Multi-Objective Optimization Problem:**
-   The infrastructure must continuously solve a multi-variable optimization problem:
-   $$\min \Big( \text{Total Cost} + \lambda_1 \text{Latency Penalty} + \lambda_2 \text{QoE Penalty} + \lambda_3 \text{SLA Risk Penalty} \Big)$$
-   subject to:
-   $$\text{QoE} \ge \text{Target}, \quad \text{RTT} \le \text{SLA}_{150\text{ms}}, \quad \text{Capacity}_{\text{CPU, Mem, Bw}} \le \text{Safe Limit}$$
 
----
+Real-time video platforms face two competing infrastructure problems.
 
-## 3. Main Novelty & Scientific Contributions
+**Underutilization during low traffic**
 
-KubeStream does not merely implement reactive autoscaling (which AWS or Kubernetes already offer). The novelty lies in the transparency and closed-loop unification of five distinct control dimensions:
+- Provisioned SFU instances remain underutilized.
+- Transcoding resources consume unnecessary capacity.
+- Infrastructure remains active despite low demand.
+- Static provisioning increases operational expenditure.
 
-1. **Workload-Aware Architectural Switching:**
-   Transitions dynamically between 4 architectural topologies based on workload composition (interactive ratio, publisher count, spectator ratio, latency requirements):
-   - **Mode 1 — P2P Mesh:** Group size $\le 6$, $100\%$ interactive. Zero SFU compute or egress cost.
-   - **Mode 2 — Central SFU Cluster:** Interactive meetings ($<500$ users). Selective forwarding by EKS workers.
-   - **Mode 3 — Cascaded SFU Fabric:** Multi-track conferences ($>20$ publishers). Primary ingestion SFU with regional distribution relays.
-   - **Mode 4 — Hybrid Broadcast with LL-HLS & CDN:** High-spectator events ($>500$ users, $>70\%$ spectators). SFU forwards to transcoders, and Amazon CloudFront CDN absorbs $98.4\%$ of spectator fan-out.
-2. **Multi-Attribute Routing Optimization:**
-   Replaces naive "nearest-region" lookups with a normalized multi-attribute objective score:
-   $$\text{Score}(r) = w_1 S_{\text{latency}} + w_2 S_{\text{capacity}} + w_3 S_{\text{congestion}} + w_4 S_{\text{reliability}} + w_5 S_{\text{cost}}$$
-3. **Predictive Workload Pre-Scaling with Hysteresis:**
-   Calculates arrival velocity $v = \text{joinRate} - \text{leaveRate}$ to forecast attendees at $t+30\text{s}$, $t+60\text{s}$, and $t+300\text{s}$. Proactively provisions media workers at $75\%$ projected utilization before saturation occurs, with a $40\%$ scale-down threshold and cooldown timers to prevent oscillation.
-4. **Explainable AI (XAI) Grounded in Telecommunications Standards:**
-   Continuous QoE prediction ($0.00 - 1.00$) using Random Forest models trained on ITU-T P.1203 / E-Model physical transmission formulas. Provides mathematically exact local feature contributions (Saabas tree path decomposition) explaining why a decision was reached.
-5. **Transparent FinOps Accounting & Counterfactual Baseline:**
-   Compares real-time cloud costs against an un-optimized counterfactual baseline, proving verified $58\%-68\%$ financial savings.
+**Infrastructure pressure during extreme traffic**
 
----
+- Signalling servers experience connection bottlenecks.
+- Peer-to-peer media fan-out grows quadratically.
+- SFU clusters experience increasing CPU and bandwidth demand.
+- Network congestion degrades video quality.
+- Interactive event traffic can overwhelm backend services.
+- Aggressive scale-to-zero policies can introduce cold-start delays.
 
-## 4. System Architecture & Decoupled Dual Pipeline
+### The Optimization Objective
 
+KubeStream models infrastructure decisions as a multi-objective optimization problem:
+
+\[
+\min \left(
+C_{\text{total}}
++\lambda_1 P_{\text{latency}}
++\lambda_2 P_{\text{QoE}}
++\lambda_3 P_{\text{SLA}}
+\right)
+\]
+
+Subject to:
+
+\[
+QoE \geq QoE_{\text{target}}
+\]
+
+\[
+RTT \leq RTT_{\text{SLA}}
+\]
+
+\[
+ResourceDemand \leq SafeCapacity
+\]
+
+Where:
+
+- \(C_{\text{total}}\) represents infrastructure cost.
+- \(P_{\text{latency}}\) represents latency penalties.
+- \(P_{\text{QoE}}\) represents quality degradation penalties.
+- \(P_{\text{SLA}}\) represents service-level risk.
+- \(\lambda_1,\lambda_2,\lambda_3\) represent optimization weights.
+
+The objective is to maintain acceptable service quality while reducing unnecessary infrastructure expenditure.
+
+## 3. Key Features and Contributions
+
+### 3.1 Workload-Aware Architectural Switching
+
+Dynamically evaluates workload composition and selects between four media distribution architectures:
+
+- P2P Mesh
+- Central SFU
+- Cascaded SFU
+- Hybrid Broadcast with CDN
+
+### 3.2 Multi-Attribute Regional Routing
+
+Evaluates regional infrastructure using multiple parameters instead of relying exclusively on geographical proximity.
+
+The routing model considers:
+
+- Network latency.
+- Available capacity.
+- Congestion.
+- Reliability.
+- Estimated infrastructure cost.
+
+### 3.3 Predictive Workload Scaling
+
+Uses arrival and departure rates to estimate upcoming workload:
+
+\[
+v = JoinRate - LeaveRate
+\]
+
+The system evaluates projected demand across multiple future time horizons and models proactive worker provisioning, scale-down thresholds, and cooldown periods.
+
+### 3.4 Machine Learning-Based QoE Prediction
+
+Uses a Random Forest model to estimate video Quality of Experience from network and system telemetry.
+
+The model incorporates eight input features:
+
+- RTT
+- Jitter
+- Packet Loss
+- Bandwidth
+- Frame Rate
+- CPU Contention
+- Queue Delay
+- Bitrate Drop
+
+### 3.5 Explainable AI
+
+Implements Saabas-style tree-path feature attribution to explain the contribution of individual input features to model predictions.
+
+This provides visibility into why a particular QoE prediction or infrastructure response was produced.
+
+### 3.6 FinOps and Infrastructure Cost Analysis
+
+Compares a dynamically optimized infrastructure configuration against a counterfactual static provisioning baseline.
+
+The simulation evaluates the financial effects of:
+
+- Predictive resource provisioning.
+- CDN-based spectator distribution.
+- Spot transcoding assumptions.
+- Infrastructure consolidation.
+- Connection draining.
+
+### 3.7 Interactive Infrastructure Simulation
+
+Provides an interactive dashboard for experimenting with:
+
+- Different workload sizes.
+- Network degradation.
+- Regional congestion.
+- Infrastructure failures.
+- Architectural transitions.
+- Scaling behaviour.
+- Cost and QoE changes.
+
+## 4. System Architecture
+
+KubeStream follows a decoupled architecture consisting of a browser-based WebRTC workload, a Node.js simulation and control plane, and a Python-based machine learning service.
+
+### High-Level Architecture
+
+```text
+                 KUBESTREAM SYSTEM ARCHITECTURE
+
+                 ┌──────────────────────────┐
+                 │     React Web Client     │
+                 │                          │
+                 │  WebRTC + Dashboard UI   │
+                 └────────────┬─────────────┘
+                              │
+                    WebRTC Telemetry
+                       getStats()
+                              │
+                              ▼
+                 ┌──────────────────────────┐
+                 │   Node.js Control Plane │
+                 │                          │
+                 │  Workload Analysis      │
+                 │  Architecture Selection │
+                 │  Predictive Scaling     │
+                 │  Regional Routing       │
+                 │  Infrastructure Model   │
+                 │  FinOps Calculation     │
+                 └────────────┬─────────────┘
+                              │
+                   ML Inference Requests
+                              │
+                              ▼
+                 ┌──────────────────────────┐
+                 │    Python Flask ML API  │
+                 │                          │
+                 │  Random Forest Model    │
+                 │  QoE Prediction         │
+                 │  Feature Attribution    │
+                 └──────────────────────────┘
 ```
-                                  KUBESTREAM SYSTEM TOPOLOGY
-                                  
-     [ Real WebRTC Client ] ──── (getStats Telemetry) ────┐
-                                                         ↓
-     ┌────────────────────────────────────────────────────────────────────────┐
-     │                     CONTINUOUS CONTROL PLANE                           │
-     │                                                                        │
-     │  [Workload Analyzer] ──→ [Predictive Scaler] ──→ [Routing Optimizer]   │
-     │          │                         │                      │            │
-     │          ↓                         ↓                      ↓            │
-     │  [Architecture Mode]       [KEDA EKS Scaling]      [Edge Selection]    │
-     └───────────────────────────────────┬────────────────────────────────────┘
-                                         │
-                 ┌───────────────────────┴───────────────────────┐
-                 ↓                                               ↓
- ┌───────────────────────────────┐               ┌───────────────────────────────┐
- │   UDP MEDIA PLANE (WebRTC)    │               │  TCP CONTROL PLANE (WSS/MSK)  │
- │  • RTP / SRTP Packets         │               │  • Token-Bucket Admission     │
- │  • Sub-150ms Video SLA        │               │  • Amazon MSK (Apache Kafka)  │
- │  • 3-Tier Simulcast Layers    │               │  • ElastiCache Redis          │
- │  • Ingestion & Cascaded SFUs  │               │  • Amazon DynamoDB            │
- │  • CloudFront LL-HLS CDN      │               │  • Amazon Aurora PostgreSQL   │
- └───────────────────────────────┘               └───────────────────────────────┘
-```
 
-### Why Decoupling Matters:
-- **Media Plane (UDP):** Prioritizes timeliness over guaranteed delivery. Late packets are discarded; simulcast dynamically adapts between 720p, 360p, 180p, and audio-only priority.
-- **Control Plane (TCP):** Guarantees delivery. An interactive poll storm of 10,000 votes/sec is buffered via the virtual token bucket and processed asynchronously through Kafka, completely insulated from video stream jitter.
+### Media Plane
 
----
+The media plane represents the real-time video transport layer.
 
-## 5. Mathematical Models
+Its modeled responsibilities include:
 
-### 5.1 Haversine Distance & Latency Decomposition
-Distance between client $(\text{lat}_1, \text{lon}_1)$ and candidate region $(\text{lat}_2, \text{lon}_2)$:
-$$a = \sin^2\left(\frac{\Delta \text{lat}}{2}\right) + \cos(\text{lat}_1)\cos(\text{lat}_2)\sin^2\left(\frac{\Delta \text{lon}}{2}\right)$$
-$$c = 2 \cdot \text{atan2}(\sqrt{a}, \sqrt{1 - a}), \quad d = R_{\text{earth}} \cdot c \quad (R = 6,371\text{ km})$$
+- RTP/SRTP media packet delivery.
+- WebRTC connectivity.
+- Simulcast quality adaptation.
+- SFU ingestion and distribution.
+- CDN-assisted spectator delivery.
 
-RTT is decomposed into 5 distinct physical terms:
-$$\text{RTT} = 2 \times \Big( \underbrace{\frac{d}{200\text{ km/ms}}}_{\text{Fiber Propagation}} + \underbrace{T_{\text{routing}}}_{\text{ISP Peering}} + \underbrace{\left(\frac{\text{Load}}{\text{Cap}}\right)^{2.2} \times 18\text{ms}}_{\text{Buffer Queueing}} + \underbrace{2.4\text{ms}}_{\text{Kernel SRTP}} \Big) + \text{Jitter}$$
+### Control Plane
 
-### 5.2 Multi-Constraint Bottleneck Capacity Model
-SFU worker requirements are governed by the most constraining resource vector:
-$$\text{RequiredWorkers} = \max\left( \frac{\text{CPU Demand}}{800\%}, \, \frac{\text{Memory Demand}}{16\text{ GB}}, \, \frac{\text{Connections}}{1,200}, \, \frac{\text{Egress Bandwidth}}{5.0\text{ Gbps}} \right)$$
+The control plane coordinates infrastructure decisions.
 
-### 5.3 ITU-T P.1203 Transmission Rating Factor (QoE)
-Calculated via the transmission rating factor $R$:
-$$R = 94.0 - I_d(\text{RTT}, \text{jitter}, \text{queue}) - I_e(\text{loss}, \text{bitrate drop}) - I_{\text{cpu}}$$
-$$\text{MOS} = 1.0 + 0.035 R + R(R - 60)(100 - R) \times 7.0 \times 10^{-6}$$
-$$\text{QoE} = \max\left(0.0, \min\left(1.0, \frac{\text{MOS} - 1.0}{3.5}\right)\right)$$
+Its modeled responsibilities include:
 
----
+- Workload analysis.
+- Architectural mode selection.
+- Regional routing.
+- Predictive scaling.
+- Admission control.
+- Infrastructure cost evaluation.
 
-## 6. Machine Learning & Explainable AI (XAI)
+### Why Decoupling Matters
 
-### Model Specification:
-- **Architecture:** Random Forest Regressor (30 estimators, max depth 8) + Classifier trained on 5,000 telecommunication samples.
-- **Features:** RTT, Jitter, Packet Loss, Bandwidth, Frame Rate, CPU Contention, Queue Delay, Bitrate Drop.
-- **Saabas Local Feature Attribution:**
-  Every individual decision path across all 30 trees is decomposed to compute the exact marginal impact of each feature:
-  $$f(x) = E[Y] + \sum_{i=1}^M \phi_i(x)$$
-  where $\phi_i(x)$ is the exact change in prediction introduced by feature $i$ across decision splits.
-- **Actionable Control Plane Output:**
-  - `STABLE` $\rightarrow$ `MAINTAIN_DIRECT_SFU` (720p HD)
-  - `CONGESTED_EDGE` $\rightarrow$ `ADAPT_SIMULCAST_LAYER_MEDIUM` (360p SD)
-  - `DEGRADED_IMMINENT` $\rightarrow$ `MIGRATE_WAVELENGTH_5G_EDGE` (180p Low)
-  - `CRITICAL_DEADZONE` $\rightarrow$ `FALLBACK_AUDIO_ONLY_PRIORITY` (Video Suppressed)
+Media traffic and interactive application traffic have different operating requirements.
 
----
+Media delivery prioritizes timeliness and low latency, while control-plane operations generally require reliable message delivery and processing.
 
-## 7. FinOps & Unit Economics
+Separating these responsibilities helps prevent spikes in interactive application traffic from directly interfering with the media delivery model.
 
-### Itemized AWS Rate Card:
-- **SFU Workers:** $\$0.340/\text{hr}$ per c6i.2xlarge pod
-- **Transcoders:** $\$0.135/\text{hr}$ (AWS Fargate Spot with $70\%$ discount)
-- **Direct AWS Egress:** $\$0.080/\text{GB}$
-- **CloudFront CDN Egress:** $\$0.025/\text{GB}$
-- **ElastiCache Redis:** $\$0.260/\text{hr}$
-- **DynamoDB Writes:** $\$1.25/\text{1M writes}$
-- **Aurora PostgreSQL:** $\$0.260/\text{hr}$
+## 5. Architectural Modes
 
-### Counterfactual Baseline vs. KubeStream Optimized:
-- **Naive Architecture:** Sized statically for peak load, direct SFU fan-out without CDN offload, standard on-demand transcoding.
-- **KubeStream Dynamic:** Predictive pre-warming, CloudFront CDN offloading $98.4\%$ of passive spectators, Spot transcoding, and connection draining.
-- **Unit Economics:**
-  $$\text{Cost per Participant-Hour} = \frac{\text{Total Hourly Cost}}{\text{Active Attendees}}$$
-  $$\text{Cost per Delivered GB} = \frac{\text{Total Hourly Cost}}{\text{Delivered Gbps} \times 3600 / 8}$$
+KubeStream evaluates four architectural configurations.
 
----
+| Mode | Architecture | Intended Workload |
+|---|---|---|
+| 1 | P2P Mesh | Small, highly interactive groups |
+| 2 | Central SFU Cluster | Interactive meetings |
+| 3 | Cascaded SFU Fabric | Multi-publisher conferences |
+| 4 | Hybrid Broadcast with CDN | Large spectator-heavy events |
 
-## 8. AWS Production Cloud Mapping
+The architecture selector evaluates workload composition, including participant count, publisher count, spectator ratio, and latency requirements.
 
-| System Tier | KubeStream Architectural Role | Production AWS Service | Scaling Strategy |
-| :--- | :--- | :--- | :--- |
-| **Media Plane** | WebRTC SFU Media Streaming Workers | **Amazon EKS (c6i.2xlarge EC2)** | KEDA predictive HPA by PPS & CPU |
-| **Media Plane** | Spectator CDN Edge Delivery | **Amazon CloudFront + Route 53** | Global edge caching with Origin Shield |
-| **Media Plane** | Live Video Transcoding (LL-HLS) | **AWS Fargate Spot** | Stateless spot fleet (70% savings) |
-| **Control Plane** | Signalling & Room Coordination | **Amazon ECS / EKS Microservices** | WebSocket connection pooling |
-| **Control Plane** | Event Stream Decoupling | **Amazon MSK (Apache Kafka)** | Partitioned topic hashing by RoomID |
-| **Data Plane** | Ephemeral Presence & State | **Amazon ElastiCache Redis** | Multi-AZ cluster replication |
-| **Data Plane** | Live Interactive Polls & Q&A | **Amazon DynamoDB** | On-demand single-digit ms write capacity |
-| **Data Plane** | Billing, Accounts & Registration | **Amazon Aurora PostgreSQL** | Serverless v2 transactional ACID storage |
-| **Security** | DDoS & Token-Bucket Admission | **AWS WAF + AWS Shield Advanced** | Token-bucket virtual rate limiter |
+### Mode 1 — P2P Mesh
 
----
+Direct peer-to-peer media connections for small interactive groups.
 
-## 9. Honest Simulation Boundaries
+### Mode 2 — Central SFU Cluster
 
-In adherence to scientific integrity:
+A central Selective Forwarding Unit distributes media streams between participants without requiring every participant to transmit directly to every other participant.
 
-| Data Type | Badge Label | Actual Execution Boundary |
-| :--- | :--- | :--- |
-| **Browser WebRTC** | `[REAL — Browser getStats()]` | Real browser WebRTC loopback via `RTCPeerConnection.getStats()` |
-| **Regional Cloud Infra** | `[SIMULATED — Regional SFU]` | Mathematical discrete-timestep digital twin modeling EKS SFU clusters |
-| **AWS Billing** | `[MODELLED — AWS FinOps]` | Real-time unit economics derived from AWS rate cards |
-| **ML Inference** | `[PREDICTED — ML Forecast]` | Trained Random Forest model via Python Flask / embedded JS fallback |
+### Mode 3 — Cascaded SFU Fabric
 
----
+Multiple interconnected SFU instances distribute media across larger conferences and regional infrastructure.
 
-## 10. How to Run the Application
+### Mode 4 — Hybrid Broadcast with CDN
 
-### Prerequisites:
-- **Node.js** v18+ (tested on v20/v22)
-- **Python** 3.10+ (virtual environment located in `ml/venv`)
+SFU-based ingestion and transcoding are combined with CDN-assisted delivery for large spectator audiences.
 
-### Step 1: Install Dependencies
+## 6. Mathematical Models
+
+KubeStream uses several mathematical models to represent infrastructure behaviour.
+
+### 6.1 Haversine Distance
+
+The geographical distance between a client and a candidate infrastructure region is estimated using the Haversine formula.
+
+\[
+a = \sin^2\left(\frac{\Delta lat}{2}\right)
++ \cos(lat_1)\cos(lat_2)
+\sin^2\left(\frac{\Delta lon}{2}\right)
+\]
+
+\[
+c = 2\operatorname{atan2}(\sqrt a,\sqrt{1-a})
+\]
+
+\[
+d = R_{\text{earth}} \cdot c
+\]
+
+Where the Earth's approximate radius is:
+
+\[
+R_{\text{earth}} = 6371\text{ km}
+\]
+
+### 6.2 Regional Routing Score
+
+Regional selection considers several normalized attributes:
+
+\[
+Score(r) =
+w_1S_{\text{latency}} +
+w_2S_{\text{capacity}} +
+w_3S_{\text{congestion}} +
+w_4S_{\text{reliability}} +
+w_5S_{\text{cost}}
+\]
+
+The selected region is determined by comparing calculated regional scores according to the routing objective.
+
+### 6.3 Infrastructure Capacity
+
+Worker requirements are modeled using a resource bottleneck approach:
+
+\[
+RequiredWorkers =
+\max\left(
+\frac{CPU_{\text{demand}}}{CPU_{\text{capacity}}},
+\frac{Memory_{\text{demand}}}{Memory_{\text{capacity}}},
+\frac{Connections_{\text{demand}}}{Connection_{\text{capacity}}},
+\frac{Bandwidth_{\text{demand}}}{Bandwidth_{\text{capacity}}}
+\right)
+\]
+
+This represents the principle that the most constrained resource can determine the required infrastructure capacity.
+
+### 6.4 QoE Transmission Rating
+
+The simulation uses a transmission rating formulation based on network degradation factors:
+
+\[
+R = 94 - I_d - I_e - I_{\text{cpu}}
+\]
+
+Where:
+
+- \(I_d\) represents delay-related impairment.
+- \(I_e\) represents packet-loss and encoding-related impairment.
+- \(I_{\text{cpu}}\) represents CPU contention impairment.
+
+The model converts the rating into a normalized QoE score.
+
+**Note:** This is a project-level QoE modeling formulation inspired by telecommunications rating concepts, not a claim of implementing the complete ITU-T P.1203 standard.
+
+## 7. Machine Learning and Explainable AI
+
+### Model Specification
+
+| Component | Configuration |
+|---|---|
+| Model | Random Forest |
+| Task | QoE prediction and classification |
+| Regressor | 30 estimators |
+| Maximum Tree Depth | 8 |
+| Training Samples | 5,000 |
+| Input Features | 8 |
+| ML Service | Python Flask |
+
+The model is trained using generated telecommunications-oriented samples.
+
+### Input Features
+
+| Feature | Description |
+|---|---|
+| RTT | Round-trip network latency |
+| Jitter | Variation in packet arrival time |
+| Packet Loss | Percentage of lost packets |
+| Bandwidth | Available network bandwidth |
+| Frame Rate | Video frames delivered per second |
+| CPU Contention | Processor resource pressure |
+| Queue Delay | Estimated packet queueing delay |
+| Bitrate Drop | Reduction in video bitrate |
+
+### Saabas Feature Attribution
+
+KubeStream uses tree-path feature contributions to explain individual predictions.
+
+The prediction can be represented as:
+
+\[
+f(x) = E[Y] + \sum_{i=1}^{M}\phi_i(x)
+\]
+
+Where:
+
+- \(E[Y]\) is the expected baseline prediction.
+- \(\phi_i(x)\) represents the contribution associated with feature \(i\).
+- \(M\) is the number of input features.
+
+These contributions help identify which network or system conditions influenced a prediction.
+
+### Infrastructure Response Examples
+
+| Network Condition | Example Response |
+|---|---|
+| Stable | Maintain direct SFU operation |
+| Congested Edge | Adapt simulcast quality |
+| Degraded Network | Consider regional migration |
+| Critical Conditions | Prioritize audio delivery |
+
+The dashboard exposes these decisions through the XAI interface.
+
+## 8. FinOps and Cost Optimization
+
+KubeStream incorporates a modeled AWS-oriented cost analysis framework.
+
+### Infrastructure Cost Categories
+
+| Resource | Modeled Cost |
+|---|---:|
+| SFU Workers | $0.340/hour |
+| Transcoders | $0.135/hour |
+| Direct AWS Egress | $0.080/GB |
+| CloudFront CDN Egress | $0.025/GB |
+| ElastiCache Redis | $0.260/hour |
+| DynamoDB Writes | $1.25/1M writes |
+| Aurora PostgreSQL | $0.260/hour |
+
+These are configurable modeling assumptions, not live AWS billing measurements or guaranteed current AWS prices.
+
+### Counterfactual Comparison
+
+KubeStream compares two infrastructure approaches.
+
+**Static Baseline**
+
+- Provisioned for peak workload.
+- Limited workload-aware resource consolidation.
+- Direct SFU fan-out assumptions.
+- Conventional on-demand transcoding assumptions.
+
+**Optimized Configuration**
+
+- Predictive worker provisioning.
+- CDN-assisted spectator delivery.
+- Spot transcoding assumptions.
+- Connection draining.
+- Dynamic infrastructure consolidation.
+
+### Unit Economics
+
+Cost per participant-hour:
+
+\[
+C_{\text{participant-hour}} =
+\frac{TotalHourlyCost}{ActiveParticipants}
+\]
+
+Cost per delivered GB:
+
+\[
+C_{\text{GB}} =
+\frac{TotalHourlyCost}{DeliveredGBPerHour}
+\]
+
+The dashboard presents the modeled cost differences between the baseline and optimized configurations.
+
+## 9. Technology Stack
+
+| Layer | Technologies |
+|---|---|
+| Frontend | React, Vite, JavaScript, CSS |
+| Backend | Node.js, Express |
+| Real-Time Communication | WebRTC, Socket.IO |
+| Machine Learning | Python, Scikit-learn |
+| ML API | Flask |
+| Explainable AI | Saabas-style tree-path attribution |
+| Infrastructure Modeling | Digital Twin Simulation |
+| Cloud Architecture Reference | AWS EKS, ECS, CloudFront, MSK, Redis, DynamoDB, Aurora |
+| Development Tools | VS Code, Git, npm, Python |
+
+## 10. AWS Production Architecture Mapping
+
+The following table maps the simulated architecture to potential AWS production services.
+
+| System Tier | Architectural Role | AWS Service |
+|---|---|---|
+| Media Plane | SFU Workers | Amazon EKS |
+| Media Plane | CDN Distribution | Amazon CloudFront |
+| Media Plane | Video Transcoding | AWS Fargate |
+| Control Plane | Signalling Services | Amazon ECS / EKS |
+| Control Plane | Event Streaming | Amazon MSK |
+| Data Plane | Ephemeral State | Amazon ElastiCache |
+| Data Plane | Interactive Polls | Amazon DynamoDB |
+| Data Plane | Accounts and Billing | Amazon Aurora PostgreSQL |
+| Security | Admission and DDoS Protection | AWS WAF and AWS Shield |
+
+These integrations describe a potential production deployment architecture. The current implementation models these infrastructure components rather than provisioning actual AWS resources.
+
+## 11. Simulation Boundaries
+
+KubeStream distinguishes between real application behaviour and simulated infrastructure behaviour.
+
+| Component | Execution Type | Description |
+|---|---|---|
+| Browser WebRTC | Real | Browser-based WebRTC telemetry using `RTCPeerConnection.getStats()` |
+| Regional Infrastructure | Simulated | Discrete-timestep digital twin of regional infrastructure |
+| Infrastructure Billing | Modelled | Cost calculations using configurable AWS-oriented rate assumptions |
+| QoE Prediction | ML Inference | Random Forest prediction through the Python Flask service |
+| Infrastructure Scaling | Simulated | Workload-driven worker provisioning and consolidation |
+| Regional Routing | Simulated | Multi-attribute region selection |
+
+**Important:** KubeStream is currently a local infrastructure digital twin. It does not provision real Kubernetes clusters, deploy production SFU instances, or execute live AWS autoscaling operations.
+
+The browser-based WebRTC component provides real client-side telemetry, while infrastructure decisions are evaluated by the simulation engine.
+
+## 12. Installation and Setup
+
+### Prerequisites
+
+Install the following software before running KubeStream.
+
+| Requirement | Recommended Version |
+|---|---|
+| Node.js | v18 or later |
+| npm | Included with Node.js |
+| Python | 3.10 or later |
+| Git | Latest stable version |
+| Web Browser | Recent Chrome, Edge, or Firefox |
+
+Check your installed versions:
+
 ```bash
-# Install server dependencies
+node --version
+npm --version
+python --version
+git --version
+```
+
+### Step 1: Clone the Repository
+
+```bash
+git clone https://github.com/asminsinha/KubeStream.git
+```
+
+Navigate into the project:
+
+```bash
+cd KubeStream
+```
+
+### Step 2: Install Node.js Dependencies
+
+Install the server dependencies:
+
+```bash
 cd server
 npm install
+```
 
-# Install client dependencies
+Install the frontend dependencies:
+
+```bash
 cd ../client
 npm install
 ```
 
-### Step 2: Start the System
-You can run all three tiers independently or using the root scripts:
+Return to the project root:
 
 ```bash
-# Terminal 1: Start Micro-ML Decision Engine (Port 5001)
+cd ..
+```
+
+### Step 3: Set Up the Python Environment
+
+Create a virtual environment:
+
+```bash
+python -m venv ml/venv
+```
+
+Activate it on Windows PowerShell:
+
+```powershell
+.\ml\venv\Scripts\Activate.ps1
+```
+
+If PowerShell blocks activation, use the Command Prompt activation script instead:
+
+```cmd
+ml\venv\Scripts\activate.bat
+```
+
+Install Python dependencies:
+
+```bash
+python -m pip install -r requirements.txt
+```
+
+### Step 4: Verify the Project Files
+
+Ensure the following important files exist:
+
+```text
+KubeStream/
+│
+├── client/
+│   ├── package.json
+│   └── src/
+│
+├── server/
+│   ├── package.json
+│   └── index.js
+│
+├── ml/
+│   ├── app.py
+│   ├── train_model.py
+│   └── qoe_model.pkl
+│
+├── package.json
+└── requirements.txt
+```
+
+The trained model file `ml/qoe_model.pkl` is included in the repository.
+
+## 13. Running the Application
+
+KubeStream consists of three independently running services.
+
+Open **three separate terminals** in the project root directory.
+
+### Terminal 1 — Python ML Service
+
+Activate the virtual environment:
+
+```powershell
+.\ml\venv\Scripts\Activate.ps1
+```
+
+Start the ML service:
+
+```bash
 npm run dev:ml
+```
 
-# Terminal 2: Start Node.js Digital Twin Control Plane (Port 4000)
+Expected service port:
+
+```text
+http://localhost:5001
+```
+
+### Terminal 2 — Node.js Control Plane
+
+From the project root:
+
+```bash
 npm run dev:server
+```
 
-# Terminal 3: Start Vite Client Dashboard (Port 5173)
+Expected service port:
+
+```text
+http://localhost:4000
+```
+
+### Terminal 3 — React Frontend
+
+From the project root:
+
+```bash
 npm run dev:client
 ```
 
-Open **`http://localhost:5173`** in your browser.
+Expected frontend address:
+
+```text
+http://localhost:5173
+```
+
+### Access the Dashboard
+
+Open the following URL in your browser:
+
+**http://localhost:5173**
+
+Keep all three terminals running while using the application.
+
+### Troubleshooting
+
+**Port already in use**
+
+Stop the process occupying the required port or configure an available port in the corresponding service.
+
+**Missing Node.js dependencies**
+
+Run the following command inside the relevant `server/` or `client/` directory:
+
+```bash
+npm install
+```
+
+**Python module not found**
+
+Activate the virtual environment and run:
+
+```bash
+python -m pip install -r requirements.txt
+```
+
+**ML model not found**
+
+Verify that the following file exists:
+
+```text
+ml/qoe_model.pkl
+```
+
+## 14. Automated Live Demonstration
+
+KubeStream includes a 10-stage automated demonstration accessible through the **RUN LIVE DEMO** control in the dashboard.
+
+| Stage | Scenario | Demonstration |
+|---|---|---|
+| 1 | Small Student Webinar | Low-demand infrastructure configuration |
+| 2 | Interactive Growth | SFU capacity expansion |
+| 3 | National Summit | Hybrid Broadcast and CDN transition |
+| 4 | Regional Congestion | Multi-attribute regional routing |
+| 5 | Client Dead Zone | Audio-priority degradation response |
+| 6 | Predictive Join Storm | Proactive worker provisioning |
+| 7 | Availability Zone Failure | Simulated multi-AZ traffic redistribution |
+| 8 | Poll Flood | Token-bucket admission control |
+| 9 | Audience Departure | Connection draining and scale-down hysteresis |
+| 10 | Resource Consolidation | Infrastructure cost comparison |
+
+The demonstration provides a visual narrative of workload changes, architectural transitions, network degradation, and infrastructure optimization.
+
+## 15. Project Structure
+
+```text
+KubeStream/
+│
+├── client/
+│   ├── public/
+│   ├── src/
+│   │   ├── assets/
+│   │   ├── components/
+│   │   │   ├── ArchitectureGuide.jsx
+│   │   │   ├── ChaosResilienceLab.jsx
+│   │   │   ├── ExperimentLab.jsx
+│   │   │   ├── FinOpsCenter.jsx
+│   │   │   ├── GlobalEdgeOrchestrator.jsx
+│   │   │   ├── Header.jsx
+│   │   │   ├── InfrastructureLab.jsx
+│   │   │   ├── LiveDemoController.jsx
+│   │   │   ├── LiveVideoLab.jsx
+│   │   │   ├── OverviewDashboard.jsx
+│   │   │   ├── SystemAuditLog.jsx
+│   │   │   └── XaiDecisionCenter.jsx
+│   │   │
+│   │   ├── services/
+│   │   │   └── simulationEngine.js
+│   │   │
+│   │   ├── utils/
+│   │   │   └── webrtcHelper.js
+│   │   │
+│   │   ├── App.jsx
+│   │   ├── App.css
+│   │   ├── index.css
+│   │   └── main.jsx
+│   │
+│   ├── index.html
+│   ├── package.json
+│   └── vite.config.js
+│
+├── server/
+│   ├── index.js
+│   ├── simulationEngine.js
+│   └── package.json
+│
+├── ml/
+│   ├── app.py
+│   ├── train_model.py
+│   └── qoe_model.pkl
+│
+├── package.json
+├── requirements.txt
+├── .gitignore
+└── README.md
+```
+
+## 16. Limitations and Future Scope
+
+### Current Limitations
+
+- Regional infrastructure is represented through a mathematical digital twin rather than deployed cloud resources.
+- AWS costs are calculated using configurable modeling assumptions rather than live billing APIs.
+- Kubernetes orchestration is represented through simulated scaling decisions.
+- WebRTC telemetry is collected from the browser, but the infrastructure simulation does not constitute a production-grade distributed SFU deployment.
+- QoE predictions depend on the trained model and its generated training data.
+
+### Future Scope
+
+Potential extensions include:
+
+1. Deploying actual SFU workers through Kubernetes and Amazon EKS.
+2. Integrating Terraform or AWS CDK for infrastructure provisioning.
+3. Connecting CloudWatch metrics to the control plane.
+4. Implementing Prometheus-based autoscaling with KEDA.
+5. Integrating production WebRTC infrastructure such as Mediasoup or Janus.
+6. Training and validating QoE models using real-world telecommunications datasets.
+7. Extending regional routing using live network measurements.
+
+## 17. Contributors
+
+### Asmin Sinha
+
+**Project Developer**
+
+B.Tech — Computer Science and Engineering (AI & ML)  
+Vellore Institute of Technology, Vellore
+
+GitHub: [@asminsinha](https://github.com/asminsinha)
+
+### Toulik Talukder
+
+**Project Developer**
+
+B.Tech — Computer Science and Engineering  
+Vellore Institute of Technology, Vellore
 
 ---
 
-## 11. Automated Live Demonstration (10-Stage Narrative)
-
-Click the **"RUN LIVE DEMO"** button on the header to execute the complete automated narrative:
-1. **Stage 1 — Small Student Webinar (300 Attendees):** Shows minimal footprint, 2 SFU pods, no wasteful CDN.
-2. **Stage 2 — Interactive Growth (1,500 Attendees):** SFU cluster scales out to absorb active video publishers.
-3. **Stage 3 — National Summit (20,000 Spectators):** Dynamic shift to `HYBRID_BROADCAST_CDN`, offloading $98.4\%$ of fan-out to CloudFront.
-4. **Stage 4 — Regional Network Congestion (Mumbai Overload):** Routing optimizer shifts traffic to Frankfurt/Singapore based on multi-attribute scores.
-5. **Stage 5 — Client Enters Dead Zone:** Transport collapses; ML model triggers `AUDIO_ONLY` priority to preserve speech intelligibility.
-6. **Stage 6 — Predictive Join Storm (+10,000 Entering):** Short-horizon predictor pre-warms workers 45 seconds before CPU saturation.
-7. **Stage 7 — Availability Zone Failure (ap-south-1a Crash):** Multi-AZ traffic drains gracefully to AZ-B and AZ-C without session drops.
-8. **Stage 8 — Token-Bucket Poll Flood (10,000 Polls/sec):** Admission queue admits 1,200 req/s, protecting Aurora and DynamoDB while isolating the media plane.
-9. **Stage 9 — Audience Leaves:** Connection draining hysteresis prevents sudden container drops.
-10. **Stage 10 — Resource Consolidation:** Fleet returns to warm baseline; final FinOps audit confirms $60\%+$ verified cost savings.
-
----
-
-## 12. Limitations & Future Real-Cloud Deployment
-
-- **Current Boundary:** The platform executes as a high-fidelity digital twin simulation on localhost while collecting real client WebRTC metrics via browser APIs.
-- **Future Roadmap:**
-  - Deploying genuine Kubernetes SFU pods via Terraform and AWS CDK.
-  - Interfacing with AWS CloudWatch metric streams and KEDA Prometheus scalers.
-  - Ingesting real-world production WebRTC traces (Mediasoup / Janus getStats dumps).
-
----
-*Developed for the KubeStream Scalable Web Infrastructure for Real-Time Video & Interactive Events Project.*
+<p align="center">
+  <b>KubeStream</b><br>
+  Intelligent Scalable Web Infrastructure for Real-Time Video & Interactive Events
+  <br><br>
+  Developed by <b>Asmin Sinha</b> and <b>Toulik Talukder</b>
+</p>
