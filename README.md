@@ -88,42 +88,34 @@ Real-time video platforms face two competing infrastructure problems.
 - Interactive event traffic can overwhelm backend services.
 - Aggressive scale-to-zero policies can introduce cold-start delays.
 
-### The Optimization Objective
+### Optimization Objective
 
-KubeStream models infrastructure decisions as a multi-objective optimization problem:
-
-\[
-\min \left(
-C_{\text{total}}
-+\lambda_1 P_{\text{latency}}
-+\lambda_2 P_{\text{QoE}}
-+\lambda_3 P_{\text{SLA}}
-\right)
-\]
+The infrastructure optimization objective is to minimize total operating cost while maintaining service quality and respecting infrastructure constraints.
 
 Subject to:
 
-\[
+$$
 QoE \geq QoE_{\text{target}}
-\]
+$$
 
-\[
+$$
 RTT \leq RTT_{\text{SLA}}
-\]
+$$
 
-\[
+$$
 ResourceDemand \leq SafeCapacity
-\]
+$$
 
 Where:
 
-- \(C_{\text{total}}\) represents infrastructure cost.
-- \(P_{\text{latency}}\) represents latency penalties.
-- \(P_{\text{QoE}}\) represents quality degradation penalties.
-- \(P_{\text{SLA}}\) represents service-level risk.
-- \(\lambda_1,\lambda_2,\lambda_3\) represent optimization weights.
+- $C_{\text{total}}$ represents infrastructure cost.
+- $P_{\text{latency}}$ represents latency penalties.
+- $P_{\text{QoE}}$ represents quality degradation penalties.
+- $P_{\text{SLA}}$ represents service-level risk.
+- $\lambda_1, \lambda_2, \lambda_3$ represent optimization weights.
 
 The objective is to maintain acceptable service quality while reducing unnecessary infrastructure expenditure.
+
 
 ## 3. Key Features and Contributions
 
@@ -315,38 +307,38 @@ KubeStream uses several mathematical models to represent infrastructure behaviou
 
 The geographical distance between a client and a candidate infrastructure region is estimated using the Haversine formula.
 
-\[
+$$
 a = \sin^2\left(\frac{\Delta lat}{2}\right)
 + \cos(lat_1)\cos(lat_2)
 \sin^2\left(\frac{\Delta lon}{2}\right)
-\]
+$$
 
-\[
-c = 2\operatorname{atan2}(\sqrt a,\sqrt{1-a})
-\]
+$$
+c = 2\operatorname{atan2}\left(\sqrt{a}, \sqrt{1-a}\right)
+$$
 
-\[
+$$
 d = R_{\text{earth}} \cdot c
-\]
+$$
 
 Where the Earth's approximate radius is:
 
-\[
-R_{\text{earth}} = 6371\text{ km}
-\]
+$$
+R_{\text{earth}} = 6371 \text{ km}
+$$
 
 ### 6.2 Regional Routing Score
 
 Regional selection considers several normalized attributes:
 
-\[
+$$
 Score(r) =
-w_1S_{\text{latency}} +
-w_2S_{\text{capacity}} +
-w_3S_{\text{congestion}} +
-w_4S_{\text{reliability}} +
-w_5S_{\text{cost}}
-\]
+w_1 S_{\text{latency}}
++ w_2 S_{\text{capacity}}
++ w_3 S_{\text{congestion}}
++ w_4 S_{\text{reliability}}
++ w_5 S_{\text{cost}}
+$$
 
 The selected region is determined by comparing calculated regional scores according to the routing objective.
 
@@ -354,15 +346,15 @@ The selected region is determined by comparing calculated regional scores accord
 
 Worker requirements are modeled using a resource bottleneck approach:
 
-\[
-RequiredWorkers =
-\max\left(
+$$
+RequiredWorkers = \max
+\left(
 \frac{CPU_{\text{demand}}}{CPU_{\text{capacity}}},
 \frac{Memory_{\text{demand}}}{Memory_{\text{capacity}}},
 \frac{Connections_{\text{demand}}}{Connection_{\text{capacity}}},
 \frac{Bandwidth_{\text{demand}}}{Bandwidth_{\text{capacity}}}
 \right)
-\]
+$$
 
 This represents the principle that the most constrained resource can determine the required infrastructure capacity.
 
@@ -370,15 +362,15 @@ This represents the principle that the most constrained resource can determine t
 
 The simulation uses a transmission rating formulation based on network degradation factors:
 
-\[
+$$
 R = 94 - I_d - I_e - I_{\text{cpu}}
-\]
+$$
 
 Where:
 
-- \(I_d\) represents delay-related impairment.
-- \(I_e\) represents packet-loss and encoding-related impairment.
-- \(I_{\text{cpu}}\) represents CPU contention impairment.
+- $I_d$ represents delay-related impairment.
+- $I_e$ represents packet-loss and encoding-related impairment.
+- $I_{\text{cpu}}$ represents CPU contention impairment.
 
 The model converts the rating into a normalized QoE score.
 
@@ -419,15 +411,15 @@ KubeStream uses tree-path feature contributions to explain individual prediction
 
 The prediction can be represented as:
 
-\[
-f(x) = E[Y] + \sum_{i=1}^{M}\phi_i(x)
-\]
+$$
+f(x) = E[Y] + \sum_{i=1}^{M} \phi_i(x)
+$$
 
 Where:
 
-- \(E[Y]\) is the expected baseline prediction.
-- \(\phi_i(x)\) represents the contribution associated with feature \(i\).
-- \(M\) is the number of input features.
+- $E[Y]$ is the expected baseline prediction.
+- $\phi_i(x)$ represents the contribution associated with feature $i$.
+- $M$ is the number of input features.
 
 These contributions help identify which network or system conditions influenced a prediction.
 
@@ -481,19 +473,19 @@ KubeStream compares two infrastructure approaches.
 
 ### Unit Economics
 
-Cost per participant-hour:
+**Cost per participant-hour:**
 
-\[
+$$
 C_{\text{participant-hour}} =
 \frac{TotalHourlyCost}{ActiveParticipants}
-\]
+$$
 
-Cost per delivered GB:
+**Cost per delivered GB:**
 
-\[
+$$
 C_{\text{GB}} =
 \frac{TotalHourlyCost}{DeliveredGBPerHour}
-\]
+$$
 
 The dashboard presents the modeled cost differences between the baseline and optimized configurations.
 
