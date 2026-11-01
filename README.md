@@ -332,8 +332,7 @@ $$
 Regional selection considers several normalized attributes:
 
 $$
-Score(r) =
-w_1 S_{\text{latency}}
+Score(r) = w_1 S_{\text{latency}}
 + w_2 S_{\text{capacity}}
 + w_3 S_{\text{congestion}}
 + w_4 S_{\text{reliability}}
