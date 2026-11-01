@@ -314,7 +314,7 @@ a = \sin^2\left(\frac{\Delta lat}{2}\right)
 $$
 
 $$
-c = 2\mathrm{atan2}\left(\sqrt{a}, \sqrt{1-a}\right)
+c = 2\arctan\left(\frac{\sqrt{a}}{\sqrt{1-a}}\right)
 $$
 
 $$
