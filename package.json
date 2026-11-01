@@ -1,0 +1,24 @@
+{
+  "name": "kubestream",
+  "version": "2.0.0",
+  "description": "KubeStream - Intelligent Scalable Web Infrastructure for Real-Time Video & Interactive Events",
+  "main": "server/index.js",
+  "scripts": {
+    "dev:client": "npm --prefix client run dev",
+    "dev:server": "node server/index.js",
+    "dev:ml": "ml\\venv\\Scripts\\python.exe ml/app.py",
+    "build:client": "npm --prefix client run build",
+    "train:ml": "ml\\venv\\Scripts\\python.exe ml/train_model.py",
+    "test": "echo \"Ready\""
+  },
+  "keywords": [
+    "webrtc",
+    "sfu",
+    "cloud-infrastructure",
+    "finops",
+    "xai",
+    "digital-twin"
+  ],
+  "author": "KubeStream Architecture Team",
+  "license": "Apache-2.0"
+}
