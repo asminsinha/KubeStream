@@ -307,37 +307,21 @@ KubeStream uses several mathematical models to represent infrastructure behaviou
 
 The geographical distance between a client and a candidate infrastructure region is estimated using the Haversine formula.
 
-$$
-a = \sin^2\left(\frac{\Delta lat}{2}\right)
-+ \cos(lat_1)\cos(lat_2)
-\sin^2\left(\frac{\Delta lon}{2}\right)
-$$
+**a = sin²(Δlat / 2) + cos(lat₁) × cos(lat₂) × sin²(Δlon / 2)**
 
-$$
-c = 2\arctan\left(\frac{\sqrt{a}}{\sqrt{1-a}}\right)
-$$
+**c = 2 × arctan(√a / √(1 − a))**
 
-$$
-d = R_{\text{earth}} \cdot c
-$$
+**d = R_earth × c**
 
 Where the Earth's approximate radius is:
 
-$$
-R_{\text{earth}} = 6371 \text{ km}
-$$
+**R_earth = 6371 km**
 
 ### 6.2 Regional Routing Score
 
 Regional selection considers several normalized attributes:
 
-$$
-Score(r) = w_1 S_{\text{latency}}
-+ w_2 S_{\text{capacity}}
-+ w_3 S_{\text{congestion}}
-+ w_4 S_{\text{reliability}}
-+ w_5 S_{\text{cost}}
-$$
+**Score(r) = w₁ × S_latency + w₂ × S_capacity + w₃ × S_congestion + w₄ × S_reliability + w₅ × S_cost**
 
 The selected region is determined by comparing calculated regional scores according to the routing objective.
 
